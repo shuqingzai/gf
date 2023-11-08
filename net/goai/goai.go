@@ -144,7 +144,11 @@ func (oai *OpenApiV3) golangTypeToOAIType(t reflect.Type) string {
 
 	case reflect.Struct:
 		switch t.String() {
-		case `time.Time`, `gtime.Time`, `carbon.Date`, `carbon.Carbon`, `carbon.DateTime`:
+		case `time.Time`, `gtime.Time`,
+			`carbon.Carbon`, `carbon.Date`, `carbon.DateMilli`, `carbon.DateMicro`, `carbon.DateNano`,
+			`carbon.DateTime`, `carbon.DateTimeMilli`, `carbon.DateTimeMicro`, `carbon.DateTimeNano`,
+			`carbon.Time`, `carbon.TimeMilli`, `carbon.TimeMicro`, `carbon.TimeNano`,
+			`carbon.Timestamp`, `carbon.TimestampMilli`, `carbon.TimestampMicro`, `carbon.TimestampNano`:
 			return TypeString
 		case `ghttp.UploadFile`:
 			return TypeFile
