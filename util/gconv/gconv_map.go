@@ -52,6 +52,7 @@ func Map(value interface{}, option ...MapOption) map[string]interface{} {
 // Deprecated: used Map instead.
 func MapDeep(value interface{}, tags ...string) map[string]interface{} {
 	return doMapConvert(value, recursiveTypeTrue, false, MapOption{
+		Deep: true,
 		Tags: tags,
 	})
 }
@@ -303,7 +304,7 @@ func doMapConvertForMapOrStructValue(in doMapConvertForMapOrStructValueInput) in
 			)
 			switch {
 			case mapKeyValue.IsZero():
-				if mapKeyValue.IsNil() {
+				if utils.CanCallIsNil(mapKeyValue) && mapKeyValue.IsNil() {
 					// quick check for nil value.
 					mapValue = nil
 				} else {
