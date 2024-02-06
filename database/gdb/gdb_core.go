@@ -767,6 +767,8 @@ func (c *Core) HasTable(name string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	charL, charR := c.db.GetChars()
+	name = gstr.Trim(name, charL+charR)
 	for _, table := range tables {
 		if table == name {
 			return true, nil
@@ -823,5 +825,5 @@ func (c *Core) FormatSqlBeforeExecuting(sql string, args []interface{}) (newSql 
 	// sql = gstr.Trim(sql)
 	// sql = gstr.Replace(sql, "\n", " ")
 	// sql, _ = gregex.ReplaceString(`\s{2,}`, ` `, sql)
-	return handleArguments(sql, args)
+	return handleSliceAndStructArgsForSql(sql, args)
 }
