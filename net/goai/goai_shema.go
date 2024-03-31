@@ -105,14 +105,14 @@ type Discriminator struct {
 // Note that the `object` can be array alias like: `type Res []Item`.
 func (oai *OpenApiV3) addSchema(object ...interface{}) error {
 	for _, v := range object {
-		if err := oai.doAddSchemaSingle(v); err != nil {
+		if err := oai.doAddSchemaSingle(v, nil); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (oai *OpenApiV3) doAddSchemaSingle(object interface{}) error {
+func (oai *OpenApiV3) doAddSchemaSingle(object interface{}, tagMap map[string]string) error {
 	if oai.Components.Schemas.refs == nil {
 		oai.Components.Schemas.refs = gmap.NewListMap()
 	}
@@ -129,7 +129,7 @@ func (oai *OpenApiV3) doAddSchemaSingle(object interface{}) error {
 	// Take the holder first.
 	oai.Components.Schemas.Set(structTypeName, SchemaRef{})
 
-	schema, err := oai.structToSchema(object)
+	schema, err := oai.structToSchema(object, tagMap)
 	if err != nil {
 		return err
 	}
@@ -142,20 +142,23 @@ func (oai *OpenApiV3) doAddSchemaSingle(object interface{}) error {
 }
 
 // structToSchema converts and returns given struct object as Schema.
-func (oai *OpenApiV3) structToSchema(object interface{}) (*Schema, error) {
+func (oai *OpenApiV3) structToSchema(object interface{}, tagMap map[string]string) (*Schema, error) {
 	var (
-		tagMap = gmeta.Data(object)
 		schema = &Schema{
 			Properties:  createSchemas(),
 			XExtensions: make(XExtensions),
 		}
 		ignoreProperties []interface{}
 	)
-	if len(tagMap) > 0 {
-		if err := oai.tagMapToSchema(tagMap, schema); err != nil {
-			return nil, err
-		}
+
+	// https://github.com/gogf/gf/issues/3435
+	if tempTagMap := gmeta.Data(object); len(tempTagMap) > 0 {
+		tagMap = tempTagMap
 	}
+	if err := oai.tagMapToSchema(tagMap, schema); err != nil {
+		return nil, err
+	}
+
 	if schema.Type != "" && schema.Type != TypeObject {
 		return schema, nil
 	}
@@ -196,15 +199,20 @@ func (oai *OpenApiV3) structToSchema(object interface{}) (*Schema, error) {
 			return nil, err
 		}
 		schema.Properties.Set(fieldName, *schemaRef)
+
+		// resolve the `required` from Validation Tag
+		//
+		// If there is `v:"required"` in the tag of each field,
+		// the field is considered to be required in the current Schema.
+		if tagValid := structField.TagValid(); tagValid != "" {
+			validationRuleSet := gset.NewStrSetFrom(gstr.Split(tagValid, "|"))
+			if validationRuleSet.Contains(validationRuleKeyForRequired) {
+				schema.Required = append(schema.Required, fieldName)
+			}
+		}
 	}
 
 	schema.Properties.Iterator(func(key string, ref SchemaRef) bool {
-		if ref.Value != nil && ref.Value.ValidationRules != "" {
-			validationRuleSet := gset.NewStrSetFrom(gstr.Split(ref.Value.ValidationRules, "|"))
-			if validationRuleSet.Contains(validationRuleKeyForRequired) {
-				schema.Required = append(schema.Required, key)
-			}
-		}
 		if !isValidParameterName(key) {
 			ignoreProperties = append(ignoreProperties, key)
 		}

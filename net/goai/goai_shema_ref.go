@@ -154,7 +154,7 @@ func (oai *OpenApiV3) newSchemaRefWithGolangType(golangType reflect.Type, tagMap
 		default:
 			golangTypeInstance := reflect.New(golangType).Elem().Interface()
 			if oai.isEmbeddedStructDefinition(golangType) {
-				schema, err = oai.structToSchema(golangTypeInstance)
+				schema, err = oai.structToSchema(golangTypeInstance, nil)
 				if err != nil {
 					return nil, err
 				}
@@ -163,7 +163,8 @@ func (oai *OpenApiV3) newSchemaRefWithGolangType(golangType reflect.Type, tagMap
 			} else {
 				var structTypeName = oai.golangTypeToSchemaName(golangType)
 				if oai.Components.Schemas.Get(structTypeName) == nil {
-					if err := oai.addSchema(golangTypeInstance); err != nil {
+					// inherit the tagMap set by the parent struct
+					if err := oai.doAddSchemaSingle(golangTypeInstance, tagMap); err != nil {
 						return nil, err
 					}
 				}
