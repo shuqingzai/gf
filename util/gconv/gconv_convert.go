@@ -273,6 +273,10 @@ func doConvert(in doConvertInput) (convertedValue interface{}) {
 		return Bytes(in.FromValue)
 
 	default:
+		// 优先使用自定义转换器
+		if v, err := iddConvertDiy(in); err == nil {
+			return v
+		}
 		if in.ReferValue != nil {
 			var referReflectValue reflect.Value
 			if v, ok := in.ReferValue.(reflect.Value); ok {
