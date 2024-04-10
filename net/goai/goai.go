@@ -161,6 +161,8 @@ func (oai *OpenApiV3) golangTypeToOAIType(t reflect.Type) string {
 		switch t.String() {
 		case `[]uint8`:
 			return TypeString
+		case `datatypes.JSON`:
+			return TypeObject
 		}
 		return TypeArray
 
