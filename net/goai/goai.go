@@ -53,6 +53,14 @@ const (
 	FormatDate     = `date`
 	FormatDateTime = `date-time`
 	FormatPassword = `password`
+	// FormatRawJSONArray json.RawMessage is used for raw JSON Array data.
+	//
+	// if you want to use raw JSON Array data, you can set the format to `JSONArray`.
+	// then: Schema.Type = "array" and Schema.Format = "Array<any>"
+	// else: Schema.Type = "object" and Schema.Format = "RawJSONObject"
+	FormatRawJSONArray = `JSONArray`
+	// FormatRawJSONObject json.RawMessage is used for raw JSON Object data.
+	FormatRawJSONObject = `RawJSONObject`
 )
 
 const (
@@ -161,8 +169,6 @@ func (oai *OpenApiV3) golangTypeToOAIType(t reflect.Type) string {
 		switch t.String() {
 		case `[]uint8`:
 			return TypeString
-		case `datatypes.JSON`:
-			return TypeObject
 		}
 		return TypeArray
 

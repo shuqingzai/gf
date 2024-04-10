@@ -113,14 +113,31 @@ func (oai *OpenApiV3) newSchemaRefWithGolangType(golangType reflect.Type, tagMap
 		// keep the example value as nil.
 	case
 		TypeArray:
-		subSchemaRef, err := oai.newSchemaRefWithGolangType(golangType.Elem(), nil)
-		if err != nil {
-			return nil, err
-		}
-		schema.Items = subSchemaRef
-		if len(schema.Enum) > 0 {
-			schema.Items.Value.Enum = schema.Enum
-			schema.Enum = nil
+		// json.RawMessage 、datatypes.JSON format as TypeObject
+		if gstr.InArray([]string{"json.RawMessage", "datatypes.JSON"}, oaiFormat) {
+			if schema.Format == FormatRawJSONArray {
+				subSchemaRef, err := oai.newSchemaRefWithGolangType(reflect.TypeOf(make(map[string]any)), nil)
+				if err != nil {
+					return nil, err
+				}
+				schema.Type = TypeArray
+				schema.Items = subSchemaRef
+			} else {
+				schema.Type = TypeObject
+				if schema.Format == "" {
+					schema.Format = FormatRawJSONObject
+				}
+			}
+		} else {
+			subSchemaRef, err := oai.newSchemaRefWithGolangType(golangType.Elem(), nil)
+			if err != nil {
+				return nil, err
+			}
+			schema.Items = subSchemaRef
+			if len(schema.Enum) > 0 {
+				schema.Items.Value.Enum = schema.Enum
+				schema.Enum = nil
+			}
 		}
 
 	case
