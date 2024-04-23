@@ -156,9 +156,6 @@ func (c *Core) DoFilter(ctx context.Context, link Link, sql string, args []inter
 
 // DoCommit commits current sql and arguments to underlying sql driver.
 func (c *Core) DoCommit(ctx context.Context, in DoCommitInput) (out DoCommitOutput, err error) {
-	// Inject internal data into ctx, especially for transaction creating.
-	ctx = c.InjectInternalCtxData(ctx)
-
 	var (
 		sqlTx                *sql.Tx
 		sqlStmt              *sql.Stmt
@@ -174,7 +171,7 @@ func (c *Core) DoCommit(ctx context.Context, in DoCommitInput) (out DoCommitOutp
 
 	// Trace span start.
 	tr := otel.GetTracerProvider().Tracer(traceInstrumentName, trace.WithInstrumentationVersion(gf.VERSION))
-	ctx, span := tr.Start(ctx, in.Type, trace.WithSpanKind(trace.SpanKindInternal))
+	ctx, span := tr.Start(ctx, string(in.Type), trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()
 
 	// Execution cased by type.
@@ -420,7 +417,7 @@ func (c *Core) RowsToResult(ctx context.Context, rows *sql.Rows) (Result, error)
 	}
 
 	if len(columnTypes) > 0 {
-		if internalData := c.GetInternalCtxDataFromCtx(ctx); internalData != nil {
+		if internalData := c.getInternalColumnFromCtx(ctx); internalData != nil {
 			internalData.FirstResultColumn = columnTypes[0].Name()
 		}
 	}
