@@ -56,7 +56,7 @@ const (
 	// FormatRawJSONArray json.RawMessage is used for raw JSON Array data.
 	//
 	// if you want to use raw JSON Array data, you can set the format to `JSONArray`.
-	// then: Schema.Type = "array" and Schema.Format = "Array<any>"
+	// then: Schema.Type = "array" and Schema.Format = "Array<map[string]any>"
 	// else: Schema.Type = "object" and Schema.Format = "RawJSONObject"
 	FormatRawJSONArray = `json-array`
 	// FormatRawJSONObject json.RawMessage is used for raw JSON Object data.
