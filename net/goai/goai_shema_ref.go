@@ -73,6 +73,9 @@ func (oai *OpenApiV3) newSchemaRefWithGolangType(golangType reflect.Type, tagMap
 		if err := oai.tagMapToSchema(tagMap, schema); err != nil {
 			return nil, err
 		}
+		if oaiType == TypeArray && schema.Type == TypeFile {
+			schema.Type = TypeArray
+		}
 	}
 	schemaRef.Value = schema
 	switch oaiType {
@@ -111,8 +114,7 @@ func (oai *OpenApiV3) newSchemaRefWithGolangType(golangType reflect.Type, tagMap
 			schemaRef.Value.Example = gconv.Bool(schemaRef.Value.Example)
 		}
 		// keep the example value as nil.
-	case
-		TypeArray:
+	case TypeArray:
 		// json.RawMessage 、datatypes.JSON format as TypeObject
 		if gstr.InArray([]string{"json.RawMessage", "datatypes.JSON"}, oaiFormat) {
 			if schema.Format == FormatRawJSONArray {
@@ -140,8 +142,7 @@ func (oai *OpenApiV3) newSchemaRefWithGolangType(golangType reflect.Type, tagMap
 			}
 		}
 
-	case
-		TypeObject:
+	case TypeObject:
 		for golangType.Kind() == reflect.Ptr {
 			golangType = golangType.Elem()
 		}
