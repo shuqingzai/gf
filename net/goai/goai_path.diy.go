@@ -83,7 +83,7 @@ func (oai *OpenApiV3) fillErrorStatusCodeResponse(metaMap map[string]string, res
 			continue
 		}
 
-		// 成功状态码必须是 4xx 或 5xx 范围内的状态码
+		// 有效的状态码必须是 4xx 或 5xx 范围内的状态码
 		codeValue, _ := strconv.Atoi(code)
 		if codeValue < 400 || codeValue > 599 {
 			continue
