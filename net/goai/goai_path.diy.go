@@ -1,6 +1,7 @@
 package goai
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -90,8 +91,8 @@ func (oai *OpenApiV3) fillErrorStatusCodeResponse(metaMap map[string]string, res
 		}
 
 		// 先尝试使用 状态码 作为 key 查找对应的响应对象
-		if rv, ok := oai.Components.Responses[code]; ok {
-			resp[code] = rv
+		if _, ok := oai.Components.Responses[code]; ok {
+			resp[code] = ReusingResponses(code)
 			continue
 		}
 
@@ -103,16 +104,24 @@ func (oai *OpenApiV3) fillErrorStatusCodeResponse(metaMap map[string]string, res
 		// 标准的状态码描述文本
 		// 400 Bad Request
 		// 500 Internal Server Error
-		if rv, ok := oai.Components.Responses[statusText]; ok {
-			resp[code] = rv
+		if _, ok := oai.Components.Responses[statusText]; ok {
+			resp[code] = ReusingResponses(statusText)
 			continue
 		}
 		// 去掉空格的状态码描述文本
 		//
 		// 400 BadRequest
 		// 500 InternalServerError
-		if rv, ok := oai.Components.Responses[strings.ReplaceAll(statusText, " ", "")]; ok {
-			resp[code] = rv
+		statusText = strings.ReplaceAll(statusText, " ", "")
+		if _, ok := oai.Components.Responses[statusText]; ok {
+			resp[code] = ReusingResponses(statusText)
 		}
+	}
+}
+
+// ReusingResponses returns a reference to the response object.
+func ReusingResponses(refName string) ResponseRef {
+	return ResponseRef{
+		Ref: fmt.Sprintf("#/components/responses/%s", refName),
 	}
 }

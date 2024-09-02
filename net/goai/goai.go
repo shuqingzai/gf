@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -238,6 +239,11 @@ func (oai *OpenApiV3) fillMapWithShortTags(m map[string]string) map[string]strin
 }
 
 func formatRefToBytes(ref string) []byte {
+	// 如果 ref 以组件根节点开头，则不添加默认的前缀
+	if strings.HasPrefix(ref, "#/components/") {
+		return []byte(fmt.Sprintf(`{"$ref":"%s"}`, ref))
+	}
+
 	return []byte(fmt.Sprintf(`{"$ref":"#/components/schemas/%s"}`, ref))
 }
 
