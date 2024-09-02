@@ -239,7 +239,7 @@ func (oai *OpenApiV3) fillMapWithShortTags(m map[string]string) map[string]strin
 }
 
 func formatRefToBytes(ref string) []byte {
-	// 如果 ref 以组件根节点开头，则不添加默认的前缀
+	// If ref starts with components root node, no default prefix is added.
 	if strings.HasPrefix(ref, "#/components/") {
 		return []byte(fmt.Sprintf(`{"$ref":"%s"}`, ref))
 	}
