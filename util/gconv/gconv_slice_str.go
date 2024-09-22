@@ -11,7 +11,6 @@ import (
 
 	"github.com/gogf/gf/v2/internal/json"
 	"github.com/gogf/gf/v2/internal/reflection"
-	"github.com/gogf/gf/v2/util/gconv/internal/localinterface"
 )
 
 // SliceStr is alias of Strings.
@@ -128,10 +127,10 @@ func Strings(any interface{}) []string {
 	if array != nil {
 		return array
 	}
-	if v, ok := any.(localinterface.IStrings); ok {
+	if v, ok := any.(iStrings); ok {
 		return v.Strings()
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return Strings(v.Interfaces())
 	}
 	// JSON format string value converting.

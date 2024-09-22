@@ -13,7 +13,6 @@ import (
 	"github.com/gogf/gf/v2/internal/json"
 	"github.com/gogf/gf/v2/internal/reflection"
 	"github.com/gogf/gf/v2/internal/utils"
-	"github.com/gogf/gf/v2/util/gconv/internal/localinterface"
 )
 
 // SliceUint is alias of Uints.
@@ -137,10 +136,10 @@ func Uints(any interface{}) []uint {
 	}
 
 	// Default handler.
-	if v, ok := any.(localinterface.IUints); ok {
+	if v, ok := any.(iUints); ok {
 		return v.Uints()
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return Uints(v.Interfaces())
 	}
 	// JSON format string value converting.
@@ -271,10 +270,10 @@ func Uint32s(any interface{}) []uint32 {
 	}
 
 	// Default handler.
-	if v, ok := any.(localinterface.IUints); ok {
+	if v, ok := any.(iUints); ok {
 		return Uint32s(v.Uints())
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return Uint32s(v.Interfaces())
 	}
 	// JSON format string value converting.
@@ -405,10 +404,10 @@ func Uint64s(any interface{}) []uint64 {
 		return array
 	}
 	// Default handler.
-	if v, ok := any.(localinterface.IUints); ok {
+	if v, ok := any.(iUints); ok {
 		return Uint64s(v.Uints())
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return Uint64s(v.Interfaces())
 	}
 	// JSON format string value converting.

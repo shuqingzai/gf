@@ -15,11 +15,12 @@ import (
 	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/internal/intlog"
-	"github.com/gogf/gf/v2/internal/utils"
 	"github.com/gogf/gf/v2/os/gcache"
 	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/gogf/gf/v2/text/gregex"
 	"github.com/gogf/gf/v2/text/gstr"
+	"github.com/gogf/gf/v2/util/gconv"
+	"github.com/gogf/gf/v2/util/gutil"
 )
 
 // SoftTimeType custom defines the soft time field type.
@@ -205,7 +206,9 @@ func (m *softTimeMaintainer) getSoftFieldNameAndType(
 				return nil, nil
 			}
 			for _, checkFiledName := range checkFiledNames {
-				fieldName = searchFieldNameFromMap(fieldsMap, checkFiledName)
+				fieldName, _ = gutil.MapPossibleItemByKey(
+					gconv.Map(fieldsMap), checkFiledName,
+				)
 				if fieldName != "" {
 					fieldType, _ = m.db.CheckLocalTypeForField(
 						ctx, fieldsMap[fieldName].Type, nil,
@@ -233,23 +236,6 @@ func (m *softTimeMaintainer) getSoftFieldNameAndType(
 	fieldName = cacheItem.FieldName
 	fieldType = cacheItem.FieldType
 	return
-}
-
-func searchFieldNameFromMap(fieldsMap map[string]*TableField, key string) string {
-	if len(fieldsMap) == 0 {
-		return ""
-	}
-	_, ok := fieldsMap[key]
-	if ok {
-		return key
-	}
-	key = utils.RemoveSymbols(key)
-	for k := range fieldsMap {
-		if strings.EqualFold(utils.RemoveSymbols(k), key) {
-			return k
-		}
-	}
-	return ""
 }
 
 // GetWhereConditionForDelete retrieves and returns the condition string for soft deleting.
@@ -353,7 +339,7 @@ func (m *softTimeMaintainer) getConditionByFieldNameAndTypeForSoftDeleting(
 	switch m.softTimeOption.SoftTimeType {
 	case SoftTimeTypeAuto:
 		switch fieldType {
-		case LocalTypeDate, LocalTypeTime, LocalTypeDatetime:
+		case LocalTypeDate, LocalTypeDatetime:
 			return fmt.Sprintf(`%s IS NULL`, quotedFieldName)
 		case LocalTypeInt, LocalTypeUint, LocalTypeInt64, LocalTypeUint64, LocalTypeBool:
 			return fmt.Sprintf(`%s=0`, quotedFieldName)
@@ -382,7 +368,7 @@ func (m *softTimeMaintainer) GetValueByFieldTypeForCreateOrUpdate(
 	var value any
 	if isDeletedField {
 		switch fieldType {
-		case LocalTypeDate, LocalTypeTime, LocalTypeDatetime:
+		case LocalTypeDate, LocalTypeDatetime:
 			value = nil
 		default:
 			value = 0
@@ -392,7 +378,7 @@ func (m *softTimeMaintainer) GetValueByFieldTypeForCreateOrUpdate(
 	switch m.softTimeOption.SoftTimeType {
 	case SoftTimeTypeAuto:
 		switch fieldType {
-		case LocalTypeDate, LocalTypeTime, LocalTypeDatetime:
+		case LocalTypeDate, LocalTypeDatetime:
 			value = gtime.Now()
 		case LocalTypeInt, LocalTypeUint, LocalTypeInt64, LocalTypeUint64:
 			value = gtime.Timestamp()

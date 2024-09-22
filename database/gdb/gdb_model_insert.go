@@ -285,14 +285,7 @@ func (m *Model) doInsertWithOption(ctx context.Context, insertOption InsertOptio
 	}
 
 	// Automatic handling for creating/updating time.
-	if fieldNameCreate != "" && m.isFieldInFieldsEx(fieldNameCreate) {
-		fieldNameCreate = ""
-	}
-	if fieldNameUpdate != "" && m.isFieldInFieldsEx(fieldNameUpdate) {
-		fieldNameUpdate = ""
-	}
-	var isSoftTimeFeatureEnabled = fieldNameCreate != "" || fieldNameUpdate != ""
-	if !m.unscoped && isSoftTimeFeatureEnabled {
+	if !m.unscoped && (fieldNameCreate != "" || fieldNameUpdate != "") {
 		for k, v := range list {
 			if fieldNameCreate != "" && empty.IsNil(v[fieldNameCreate]) {
 				fieldCreateValue := stm.GetValueByFieldTypeForCreateOrUpdate(ctx, fieldTypeCreate, false)
@@ -306,7 +299,6 @@ func (m *Model) doInsertWithOption(ctx context.Context, insertOption InsertOptio
 					v[fieldNameUpdate] = fieldUpdateValue
 				}
 			}
-			// for timestamp field that should initialize the delete_at field with value, for example 0.
 			if fieldNameDelete != "" && empty.IsNil(v[fieldNameDelete]) {
 				fieldDeleteValue := stm.GetValueByFieldTypeForCreateOrUpdate(ctx, fieldTypeDelete, true)
 				if fieldDeleteValue != nil {

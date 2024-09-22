@@ -11,7 +11,6 @@ import (
 
 	"github.com/gogf/gf/v2/internal/utils"
 	"github.com/gogf/gf/v2/os/gtime"
-	"github.com/gogf/gf/v2/util/gconv/internal/localinterface"
 )
 
 // Time converts `any` to time.Time.
@@ -53,7 +52,7 @@ func GTime(any interface{}, format ...string) *gtime.Time {
 	if any == nil {
 		return nil
 	}
-	if v, ok := any.(localinterface.IGTime); ok {
+	if v, ok := any.(iGTime); ok {
 		return v.GTime(format...)
 	}
 	// It's already this type.

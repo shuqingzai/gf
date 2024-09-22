@@ -65,7 +65,6 @@ var stringTests = []struct {
 
 	{struct{}{}, "{}"},
 	{nil, ""},
-	{(*string)(nil), ""},
 
 	{gvar.New(123), "123"},
 	{gvar.New(123.456), "123.456"},

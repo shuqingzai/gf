@@ -36,14 +36,8 @@ func (p *utilAdmin) Index(r *Request) {
             <body>
                 <p>Pid: {{.pid}}</p>
                 <p>File Path: {{.path}}</p>
-                <p>
-<a href="{{$.uri}}/restart">Restart</a>
-please make sure it is running using standalone binary not from IDE or "go run"
-</p>
-                <p>
-<a href="{{$.uri}}/shutdown">Shutdown</a>
-graceful shutdown the server
-</p>
+                <p><a href="{{$.uri}}/restart">Restart</a></p>
+                <p><a href="{{$.uri}}/shutdown">Shutdown</a></p>
             </body>
             </html>
     `, data)
@@ -95,7 +89,7 @@ func (s *Server) Shutdown() error {
 	// Only shut down current servers.
 	// It may have multiple underlying http servers.
 	for _, v := range s.servers {
-		v.shutdown(ctx)
+		v.close(ctx)
 	}
 	return nil
 }

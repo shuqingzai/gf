@@ -83,10 +83,6 @@ func (c *Core) ConvertValueForField(ctx context.Context, fieldType string, field
 		err            error
 		convertedValue = fieldValue
 	)
-	switch fieldValue.(type) {
-	case time.Time, *time.Time, gtime.Time, *gtime.Time:
-		goto Default
-	}
 	// If `value` implements interface `driver.Valuer`, it then uses the interface for value converting.
 	if valuer, ok := fieldValue.(driver.Valuer); ok {
 		if convertedValue, err = valuer.Value(); err != nil {
@@ -94,7 +90,6 @@ func (c *Core) ConvertValueForField(ctx context.Context, fieldType string, field
 		}
 		return convertedValue, nil
 	}
-Default:
 	// Default value converting.
 	var (
 		rvValue = reflect.ValueOf(fieldValue)
@@ -105,9 +100,6 @@ Default:
 		rvKind = rvValue.Kind()
 	}
 	switch rvKind {
-	case reflect.Invalid:
-		convertedValue = nil
-
 	case reflect.Slice, reflect.Array, reflect.Map:
 		// It should ignore the bytes type.
 		if _, ok := fieldValue.([]byte); !ok {
@@ -117,6 +109,7 @@ Default:
 				return nil, err
 			}
 		}
+
 	case reflect.Struct:
 		switch r := fieldValue.(type) {
 		// If the time is zero, it then updates it to nil,
@@ -124,28 +117,11 @@ Default:
 		case time.Time:
 			if r.IsZero() {
 				convertedValue = nil
-			} else if fieldType == fieldTypeDate {
-				convertedValue = r.Format("2006-01-02")
-			} else if fieldType == fieldTypeTime {
-				convertedValue = r.Format("15:04:05")
-			}
-
-		case *time.Time:
-			if r == nil {
-				// Nothing to do.
-			} else if fieldType == fieldTypeDate {
-				convertedValue = r.Format("2006-01-02")
-			} else if fieldType == fieldTypeTime {
-				convertedValue = r.Format("15:04:05")
 			}
 
 		case gtime.Time:
 			if r.IsZero() {
 				convertedValue = nil
-			} else if fieldType == fieldTypeDate {
-				convertedValue = r.Layout("2006-01-02")
-			} else if fieldType == fieldTypeTime {
-				convertedValue = r.Layout("15:04:05")
 			} else {
 				convertedValue = r.Time
 			}
@@ -153,13 +129,12 @@ Default:
 		case *gtime.Time:
 			if r.IsZero() {
 				convertedValue = nil
-			} else if fieldType == fieldTypeDate {
-				convertedValue = r.Layout("2006-01-02")
-			} else if fieldType == fieldTypeTime {
-				convertedValue = r.Layout("15:04:05")
 			} else {
 				convertedValue = r.Time
 			}
+
+		case *time.Time:
+			// Nothing to do.
 
 		case Counter, *Counter:
 			// Nothing to do.
@@ -182,7 +157,6 @@ Default:
 			}
 		}
 	}
-
 	return convertedValue, nil
 }
 
@@ -272,10 +246,6 @@ func (c *Core) CheckLocalTypeForField(ctx context.Context, fieldType string, fie
 	case
 		fieldTypeDate:
 		return LocalTypeDate, nil
-
-	case
-		fieldTypeTime:
-		return LocalTypeTime, nil
 
 	case
 		fieldTypeDatetime,
@@ -383,18 +353,12 @@ func (c *Core) ConvertValueForLocal(
 		return gconv.Bool(fieldValue), nil
 
 	case LocalTypeDate:
+		// Date without time.
 		if t, ok := fieldValue.(time.Time); ok {
 			return gtime.NewFromTime(t).Format("Y-m-d"), nil
 		}
 		t, _ := gtime.StrToTime(gconv.String(fieldValue))
 		return t.Format("Y-m-d"), nil
-
-	case LocalTypeTime:
-		if t, ok := fieldValue.(time.Time); ok {
-			return gtime.NewFromTime(t).Format("H:i:s"), nil
-		}
-		t, _ := gtime.StrToTime(gconv.String(fieldValue))
-		return t.Format("H:i:s"), nil
 
 	case LocalTypeDatetime:
 		if t, ok := fieldValue.(time.Time); ok {

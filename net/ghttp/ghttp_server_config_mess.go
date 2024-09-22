@@ -27,34 +27,17 @@ func (s *Server) SetFormParsingMemory(maxMemory int64) {
 	s.config.FormParsingMemory = maxMemory
 }
 
-// SetGraceful sets the Graceful for server.
-func (s *Server) SetGraceful(graceful bool) {
-	s.config.Graceful = graceful
-	// note: global setting.
-	gracefulEnabled = graceful
+// SetSwaggerPath sets the SwaggerPath for server.
+func (s *Server) SetSwaggerPath(path string) {
+	s.config.SwaggerPath = path
 }
 
-// GetGraceful returns the Graceful for server.
-func (s *Server) GetGraceful() bool {
-	return s.config.Graceful
+// SetSwaggerUITemplate sets the Swagger template for server.
+func (s *Server) SetSwaggerUITemplate(swaggerUITemplate string) {
+	s.config.SwaggerUITemplate = swaggerUITemplate
 }
 
-// SetGracefulTimeout sets the GracefulTimeout for server.
-func (s *Server) SetGracefulTimeout(gracefulTimeout int) {
-	s.config.GracefulTimeout = gracefulTimeout
-}
-
-// GetGracefulTimeout returns the GracefulTimeout for server.
-func (s *Server) GetGracefulTimeout() int {
-	return s.config.GracefulTimeout
-}
-
-// SetGracefulShutdownTimeout sets the GracefulShutdownTimeout for server.
-func (s *Server) SetGracefulShutdownTimeout(gracefulShutdownTimeout int) {
-	s.config.GracefulShutdownTimeout = gracefulShutdownTimeout
-}
-
-// GetGracefulShutdownTimeout returns the GracefulShutdownTimeout for server.
-func (s *Server) GetGracefulShutdownTimeout() int {
-	return s.config.GracefulShutdownTimeout
+// SetOpenApiPath sets the OpenApiPath for server.
+func (s *Server) SetOpenApiPath(path string) {
+	s.config.OpenApiPath = path
 }

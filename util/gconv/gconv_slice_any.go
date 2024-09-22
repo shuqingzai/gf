@@ -11,7 +11,6 @@ import (
 
 	"github.com/gogf/gf/v2/internal/json"
 	"github.com/gogf/gf/v2/internal/reflection"
-	"github.com/gogf/gf/v2/util/gconv/internal/localinterface"
 )
 
 // SliceAny is alias of Interfaces.
@@ -105,7 +104,7 @@ func Interfaces(any interface{}) []interface{} {
 	if array != nil {
 		return array
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return v.Interfaces()
 	}
 	// JSON format string value converting.

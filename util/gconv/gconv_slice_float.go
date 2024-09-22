@@ -11,7 +11,6 @@ import (
 
 	"github.com/gogf/gf/v2/internal/json"
 	"github.com/gogf/gf/v2/internal/reflection"
-	"github.com/gogf/gf/v2/util/gconv/internal/localinterface"
 )
 
 // SliceFloat is alias of Floats.
@@ -127,10 +126,10 @@ func Float32s(any interface{}) []float32 {
 	if array != nil {
 		return array
 	}
-	if v, ok := any.(localinterface.IFloats); ok {
+	if v, ok := any.(iFloats); ok {
 		return Float32s(v.Floats())
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return Float32s(v.Interfaces())
 	}
 	// JSON format string value converting.
@@ -251,10 +250,10 @@ func Float64s(any interface{}) []float64 {
 	if array != nil {
 		return array
 	}
-	if v, ok := any.(localinterface.IFloats); ok {
+	if v, ok := any.(iFloats); ok {
 		return v.Floats()
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return Floats(v.Interfaces())
 	}
 	// JSON format string value converting.

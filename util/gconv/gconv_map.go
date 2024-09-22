@@ -13,7 +13,6 @@ import (
 	"github.com/gogf/gf/v2/internal/empty"
 	"github.com/gogf/gf/v2/internal/json"
 	"github.com/gogf/gf/v2/internal/utils"
-	"github.com/gogf/gf/v2/util/gconv/internal/localinterface"
 	"github.com/gogf/gf/v2/util/gtag"
 )
 
@@ -41,8 +40,8 @@ type MapOption struct {
 // Map converts any variable `value` to map[string]interface{}. If the parameter `value` is not a
 // map/struct/*struct type, then the conversion will fail and returns nil.
 //
-// If `value` is a struct/*struct object, the second parameter `priorityTagAndFieldName` specifies the most priority
-// priorityTagAndFieldName that will be detected, otherwise it detects the priorityTagAndFieldName in order of:
+// If `value` is a struct/*struct object, the second parameter `tags` specifies the most priority
+// tags that will be detected, otherwise it detects the tags in order of:
 // gconv, json, field name.
 func Map(value interface{}, option ...MapOption) map[string]interface{} {
 	return doMapConvert(value, recursiveTypeAuto, false, option...)
@@ -68,9 +67,10 @@ func doMapConvert(value interface{}, recursive recursiveType, mustMapReturn bool
 		return nil
 	}
 	// It redirects to its underlying value if it has implemented interface iVal.
-	if v, ok := value.(localinterface.IVal); ok {
+	if v, ok := value.(iVal); ok {
 		value = v.Val()
 	}
+
 	var (
 		usedOption = getUsedMapOption(option...)
 		newTags    = gtag.StructTagPriority
@@ -334,7 +334,7 @@ func doMapConvertForMapOrStructValue(in doMapConvertForMapOrStructValueInput) in
 	case reflect.Struct:
 		var dataMap = make(map[string]interface{})
 		// Map converting interface check.
-		if v, ok := in.Value.(localinterface.IMapStrAny); ok {
+		if v, ok := in.Value.(iMapStrAny); ok {
 			// Value copy, in case of concurrent safety.
 			for mapK, mapV := range v.MapStrAny() {
 				if in.RecursiveOption {

@@ -11,7 +11,6 @@ import (
 
 	"github.com/gogf/gf/v2/internal/json"
 	"github.com/gogf/gf/v2/internal/reflection"
-	"github.com/gogf/gf/v2/util/gconv/internal/localinterface"
 )
 
 // SliceInt is alias of Ints.
@@ -127,10 +126,10 @@ func Ints(any interface{}) []int {
 	if array != nil {
 		return array
 	}
-	if v, ok := any.(localinterface.IInts); ok {
+	if v, ok := any.(iInts); ok {
 		return v.Ints()
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return Ints(v.Interfaces())
 	}
 	// JSON format string value converting.
@@ -256,10 +255,10 @@ func Int32s(any interface{}) []int32 {
 	if array != nil {
 		return array
 	}
-	if v, ok := any.(localinterface.IInts); ok {
+	if v, ok := any.(iInts); ok {
 		return Int32s(v.Ints())
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return Int32s(v.Interfaces())
 	}
 	// JSON format string value converting.
@@ -385,10 +384,10 @@ func Int64s(any interface{}) []int64 {
 	if array != nil {
 		return array
 	}
-	if v, ok := any.(localinterface.IInts); ok {
+	if v, ok := any.(iInts); ok {
 		return Int64s(v.Ints())
 	}
-	if v, ok := any.(localinterface.IInterfaces); ok {
+	if v, ok := any.(iInterfaces); ok {
 		return Int64s(v.Interfaces())
 	}
 	// JSON format string value converting.
