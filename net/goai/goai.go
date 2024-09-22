@@ -229,7 +229,7 @@ func (oai *OpenApiV3) golangTypeToSchemaName(t reflect.Type) string {
 			// github.com/gogf/gf/api/v1/user.GetReq && Config.PkgPathParts = 2 -> v1/user.GetReq
 			parts := gstr.Split(pkgPath, `/`)
 			if len(parts) > oai.Config.PkgPathPartLength {
-				schemaName = gstr.Join(parts[len(parts)-oai.Config.PkgPathPartLength:], `/`) + gstr.SubStrFrom(schemaName, ".")
+				schemaName = gstr.Replace(gstr.Join(parts[len(parts)-oai.Config.PkgPathPartLength:], `/`), `/`, `.`) + gstr.SubStrFrom(schemaName, ".")
 			} else {
 				// use all parts
 				schemaName = gstr.Replace(pkgPath, `/`, `.`) + gstr.SubStrFrom(schemaName, ".")
