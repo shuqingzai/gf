@@ -3,8 +3,6 @@ package gconv
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/gogf/gf/v2/util/gconv/internal/localinterface"
 )
 
 // iddConvertDiy idd convert diy
@@ -50,7 +48,7 @@ func iddToDatatypesJSON(v any) []byte {
 		}
 		return *vv
 	default:
-		if f, ok := vv.(localinterface.IBytes); ok {
+		if f, ok := vv.(iBytes); ok {
 			return f.Bytes()
 		}
 		if b, err := json.Marshal(v); err == nil {
