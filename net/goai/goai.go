@@ -217,8 +217,24 @@ func (oai *OpenApiV3) golangTypeToSchemaName(t reflect.Type) string {
 		t = t.Elem()
 	}
 	if pkgPath = t.PkgPath(); pkgPath != "" && pkgPath != "." {
-		if !oai.Config.IgnorePkgPath {
+		// if !oai.Config.IgnorePkgPath {
+		// 	schemaName = gstr.Replace(pkgPath, `/`, `.`) + gstr.SubStrFrom(schemaName, ".")
+		// }
+
+		switch oai.Config.PkgPathPattern {
+		case ConfigPkgPathPatternFull:
+			// github.com/gogf/gf/api/v1/user.GetReq -> github.com/gogf/gf/api/v1/user.GetReq
 			schemaName = gstr.Replace(pkgPath, `/`, `.`) + gstr.SubStrFrom(schemaName, ".")
+		case ConfigPkgPathPatternCustomLastPartLen:
+			// github.com/gogf/gf/api/v1/user.GetReq && Config.PkgPathParts = 2 -> v1/user.GetReq
+			parts := gstr.Split(pkgPath, `/`)
+			if len(parts) > oai.Config.PkgPathPartLength {
+				schemaName = gstr.Join(parts[len(parts)-oai.Config.PkgPathPartLength:], `/`) + gstr.SubStrFrom(schemaName, ".")
+			} else {
+				// use all parts
+				schemaName = gstr.Replace(pkgPath, `/`, `.`) + gstr.SubStrFrom(schemaName, ".")
+			}
+		default: // ConfigPkgPathPatternLast
 		}
 	}
 	schemaName = gstr.ReplaceByMap(schemaName, map[string]string{
