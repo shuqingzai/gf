@@ -37,6 +37,13 @@ const (
 	//
 	// Eg: github.com/gogf/gf/api/v1/user.GetReq && Config.PkgPathParts = 2 -> v1/user.GetReq
 	ConfigPkgPathPatternCustomLastPartLen
+
+	// ConfigPkgPathPatternCustomFunc uses custom function to generate schema name.
+	//
+	// needs to be set in [Config.PkgPathFunc]
+	//
+	// if Config.PkgPathFunc is nil or returns empty string, it will use the default schema name generation.
+	ConfigPkgPathPatternCustomFunc
 )
 
 // Config provides extra configuration feature for OpenApiV3 implements.
@@ -57,6 +64,10 @@ type Config struct {
 	//
 	// It is used when PkgPathPattern is ConfigPkgPathPatternCustomLastPartLen.
 	PkgPathPartLength int
+	// PkgPathFunc is used for customizing package path in schema name with custom function.
+	//
+	// It is used when PkgPathPattern is ConfigPkgPathPatternCustomFunc.
+	PkgPathFunc func(pkgPath, schemaName string) string
 }
 
 // fillWithDefaultValue fills configuration object of `oai` with default values if these are not configured.

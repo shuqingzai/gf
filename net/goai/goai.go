@@ -234,6 +234,12 @@ func (oai *OpenApiV3) golangTypeToSchemaName(t reflect.Type) string {
 				// use all parts
 				schemaName = gstr.Replace(pkgPath, `/`, `.`) + gstr.SubStrFrom(schemaName, ".")
 			}
+		case ConfigPkgPathPatternCustomFunc:
+			if oai.Config.PkgPathFunc != nil {
+				if s := oai.Config.PkgPathFunc(pkgPath, schemaName); s != "" {
+					schemaName = s
+				}
+			}
 		default: // ConfigPkgPathPatternLast
 		}
 	}
