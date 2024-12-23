@@ -172,7 +172,7 @@ func (oai *OpenApiV3) newSchemaRefWithGolangType(golangType reflect.Type, tagMap
 		default:
 			golangTypeInstance := reflect.New(golangType).Elem().Interface()
 			if oai.isEmbeddedStructDefinition(golangType) {
-				schema, err = oai.structToSchema(golangTypeInstance, nil)
+				schema, err = oai.structToSchema(golangTypeInstance)
 				if err != nil {
 					return nil, err
 				}

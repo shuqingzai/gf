@@ -165,6 +165,8 @@ func (oai *OpenApiV3) golangTypeToOAIType(t reflect.Type) string {
 			`carbon.Time`, `carbon.TimeMilli`, `carbon.TimeMicro`, `carbon.TimeNano`,
 			`carbon.Timestamp`, `carbon.TimestampMilli`, `carbon.TimestampMicro`, `carbon.TimestampNano`,
 			`timex.DateTimeRFC3339`, `timex.DateTimeMilliRFC3339`, `timex.DateTimeMicroRFC3339`, `timex.DateTimeNanoRFC3339`,
+			`timex.DateTimeISO8601`, `timex.DateTimeMilliISO8601`, `timex.DateTimeMicroISO8601`, `timex.DateTimeNanoISO8601`,
+			`timex.DateTimeISO8601Old`, `timex.DateTimeMilliISO8601Old`, `timex.DateTimeMicroISO8601Old`, `timex.DateTimeNanoISO8601Old`,
 			`decimal.Decimal`:
 			return TypeString
 		case `ghttp.UploadFile`:

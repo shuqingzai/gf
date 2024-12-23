@@ -49,12 +49,22 @@ func (oai *OpenApiV3) getRequestSchemaRef(in getRequestSchemaRefInput) (*SchemaR
 	var (
 		dataFieldsPartsArray      = gstr.Split(in.RequestDataField, ".")
 		bizRequestStructSchemaRef = oai.Components.Schemas.Get(in.BusinessStructName)
-		schema, err               = oai.structToSchema(in.RequestObject, nil)
+		schema, err               = oai.structToSchema(in.RequestObject)
 	)
 	if err != nil {
 		return nil, err
 	}
-	if in.RequestDataField == "" && bizRequestStructSchemaRef != nil {
+
+	if bizRequestStructSchemaRef == nil {
+		return &SchemaRef{
+			Value: schema,
+		}, nil
+	}
+
+	if in.RequestDataField == "" && bizRequestStructSchemaRef.Value != nil {
+		// Append bizRequest.
+		schema.Required = append(schema.Required, bizRequestStructSchemaRef.Value.Required...)
+
 		// Normal request.
 		bizRequestStructSchemaRef.Value.Properties.Iterator(func(key string, ref SchemaRef) bool {
 			schema.Properties.Set(key, ref)

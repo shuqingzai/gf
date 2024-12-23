@@ -300,7 +300,7 @@ func (c *AdapterMemory) doRemove(_ context.Context, keys ...interface{}) (*gvar.
 	for _, key := range removedKeys {
 		c.eventList.PushBack(&adapterMemoryEvent{
 			k: key,
-			e: gtime.TimestampMilli() - 1000000,
+			e: gtime.TimestampMilli() - 1000,
 		})
 	}
 	return gvar.New(value), nil
@@ -429,12 +429,13 @@ func (c *AdapterMemory) syncEventAndClearExpired(ctx context.Context) {
 		oldExpireTime = c.expireTimes.Get(event.k)
 		// Calculating the new expiration time set.
 		newExpireTime = c.makeExpireKey(event.e)
+		// Expiration changed for this key.
 		if newExpireTime != oldExpireTime {
 			c.expireSets.GetOrNew(newExpireTime).Add(event.k)
 			if oldExpireTime != 0 {
 				c.expireSets.GetOrNew(oldExpireTime).Remove(event.k)
 			}
-			// Updating the expired time for <event.k>.
+			// Updating the expired time for `event.k`.
 			c.expireTimes.Set(event.k, newExpireTime)
 		}
 	}
