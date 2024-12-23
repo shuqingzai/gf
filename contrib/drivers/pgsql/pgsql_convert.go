@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/lib/pq"
+
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/text/gregex"
 	"github.com/gogf/gf/v2/text/gstr"
@@ -66,6 +68,10 @@ func (d *Driver) CheckLocalTypeForField(ctx context.Context, fieldType string, f
 		"_int8":
 		return gdb.LocalTypeInt64Slice, nil
 
+	case
+		"_varchar", "_text":
+		return gdb.LocalTypeStringSlice, nil
+
 	default:
 		return d.Core.CheckLocalTypeForField(ctx, fieldType, fieldValue)
 	}
@@ -109,6 +115,14 @@ func (d *Driver) ConvertValueForLocal(ctx context.Context, fieldType string, fie
 				},
 			),
 		), nil
+
+	// String slice.
+	case "_varchar", "_text":
+		var result pq.StringArray
+		if err := result.Scan(fieldValue); err != nil {
+			return nil, err
+		}
+		return []string(result), nil
 
 	default:
 		return d.Core.ConvertValueForLocal(ctx, fieldType, fieldValue)
