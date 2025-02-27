@@ -72,7 +72,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Metrics.
-	s.handleMetricsBeforeRequest(request)
+	//
+	// use idd/go-component
+	// s.handleMetricsBeforeRequest(request)
 
 	// HOOK - BeforeServe
 	s.callHookHandler(HookBeforeServe, request)
