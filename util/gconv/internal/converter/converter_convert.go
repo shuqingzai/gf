@@ -380,6 +380,10 @@ func (c *Converter) doConvert(in doConvertInput, option ConvertOption) (converte
 }
 
 func (c *Converter) doConvertForDefault(in doConvertInput, option ConvertOption) (convertedValue any, err error) {
+	// 优先使用自定义转换器
+	if v, err := c.iddConvertDiy(in, option); err == nil {
+		return v, nil
+	}
 	if in.ReferValue != nil {
 		var referReflectValue reflect.Value
 		if v, ok := in.ReferValue.(reflect.Value); ok {

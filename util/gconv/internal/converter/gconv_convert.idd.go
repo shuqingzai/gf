@@ -1,4 +1,4 @@
-package gconv
+package converter
 
 import (
 	"encoding/json"
@@ -8,14 +8,14 @@ import (
 )
 
 // iddConvertDiy idd convert diy
-func iddConvertDiy(in doConvertInput) (any, error) {
+func (c *Converter) iddConvertDiy(in doConvertInput, option ConvertOption) (any, error) {
 	switch in.ToTypeName {
 	// gorm.io/datatypes.JSON
-	case "datatypes.JSON":
+	case "datatypes.JSON", "*datatypes.JSON":
 		return iddToDatatypesJSON(in.FromValue), nil
 	// gorm.io/datatypes.JSONMap
-	case "datatypes.JSONMap":
-		return Map(in.FromValue), nil
+	case "datatypes.JSONMap", "*datatypes.JSONMap":
+		return c.Map(in.FromValue, option.MapOption), nil
 	}
 	return nil, fmt.Errorf("unsupported cast type: %T To %s", in.FromValue, in.ToTypeName)
 }
@@ -27,6 +27,7 @@ func iddToDatatypesJSON(v any) []byte {
 	if v == nil {
 		return nil
 	}
+
 	switch vv := v.(type) {
 	case string:
 		return []byte(vv)

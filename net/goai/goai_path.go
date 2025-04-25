@@ -274,11 +274,6 @@ func (oai *OpenApiV3) addPath(in addPathInput) error {
 		}
 	}
 
-	// fill more response.
-	if len(outputMetaMap) > 0 {
-		oai.fillMoreResponse(outputMetaMap, operation.Responses)
-	}
-
 	// Remove operation body duplicated properties.
 	oai.removeOperationDuplicatedProperties(operation)
 
