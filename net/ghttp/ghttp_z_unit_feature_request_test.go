@@ -8,6 +8,7 @@ package ghttp_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"testing"
@@ -362,7 +363,11 @@ func Test_Params_Basic(t *testing.T) {
 func Test_Params_Header(t *testing.T) {
 	s := g.Server(guid.S())
 	s.BindHandler("/header", func(r *ghttp.Request) {
-		r.Response.Write(r.GetHeader("test"))
+		r.Response.Write(map[string]interface{}{
+			"without-def":   r.GetHeader("no-header"),
+			"with-def":      r.GetHeader("no-header", "my-default"),
+			"x-custom-with": r.GetHeader("x-custom", "my-default"),
+		})
 	})
 	s.SetDumpRouterMap(false)
 	s.Start()
@@ -373,8 +378,14 @@ func Test_Params_Header(t *testing.T) {
 		prefix := fmt.Sprintf("http://127.0.0.1:%d", s.GetListenedPort())
 		client := g.Client()
 		client.SetPrefix(prefix)
+		client.SetHeader("x-custom", "custom-value")
 
-		t.Assert(client.Header(g.MapStrStr{"test": "123456"}).GetContent(ctx, "/header"), "123456")
+		resp := client.GetContent(ctx, "/header")
+		t.Assert(gjson.New(resp).Map(), g.Map{
+			"without-def":   "",
+			"with-def":      "my-default",
+			"x-custom-with": "custom-value",
+		})
 	})
 }
 
@@ -859,5 +870,46 @@ func Test_Params_GetRequestMapStrVar(t *testing.T) {
 
 		t.Assert(client.GetContent(ctx, "/GetRequestMapStrVar"), "")
 		t.Assert(client.GetContent(ctx, "/GetRequestMapStrVar", "id=1"), 1)
+	})
+}
+
+type GetMetaTagReq struct {
+	g.Meta `path:"/test" method:"post" summary:"meta_tag" tags:"meta"`
+	Name   string
+}
+type GetMetaTagRes struct{}
+
+type GetMetaTagSt struct{}
+
+func (r GetMetaTagSt) PostTest(ctx context.Context, req *GetMetaTagReq) (*GetMetaTagRes, error) {
+	return &GetMetaTagRes{}, nil
+}
+
+func TestRequest_GetServeHandler_GetMetaTag(t *testing.T) {
+	s := g.Server(guid.S())
+	s.Use(func(r *ghttp.Request) {
+		r.Response.Writef(
+			"summary:%s,method:%s",
+			r.GetServeHandler().GetMetaTag("summary"),
+			r.GetServeHandler().GetMetaTag("method"),
+		)
+	})
+	s.Group("/", func(grp *ghttp.RouterGroup) {
+		grp.Bind(GetMetaTagSt{})
+	})
+	s.SetDumpRouterMap(false)
+	s.Start()
+	defer s.Shutdown()
+	time.Sleep(1000 * time.Millisecond)
+
+	s.SetDumpRouterMap(false)
+	s.Start()
+	defer s.Shutdown()
+	time.Sleep(100 * time.Millisecond)
+
+	gtest.C(t, func(t *gtest.T) {
+		client := g.Client()
+		client.SetPrefix(fmt.Sprintf("http://127.0.0.1:%d", s.GetListenedPort()))
+		t.Assert(client.PostContent(ctx, "/test", "name=john"), "summary:meta_tag,method:post")
 	})
 }

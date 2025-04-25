@@ -40,7 +40,7 @@ type Request struct {
 	// =================================================================================================================
 
 	handlers        []*HandlerItemParsed   // All matched handlers containing handler, hook and middleware for this request.
-	serveHandler    *HandlerItemParsed     // Real handler serving for this request, not hook or middleware.
+	serveHandler    *HandlerItemParsed     // Real business handler serving for this request, not hook or middleware handler.
 	handlerResponse interface{}            // Handler response object for Request/Response handler.
 	hasHookHandler  bool                   // A bool marking whether there's hook handler in the handlers for performance purpose.
 	hasServeHandler bool                   // A bool marking whether there's serving handler in the handlers for performance purpose.
@@ -151,8 +151,13 @@ func (r *Request) IsExited() bool {
 }
 
 // GetHeader retrieves and returns the header value with given `key`.
-func (r *Request) GetHeader(key string) string {
-	return r.Header.Get(key)
+// It returns the optional `def` parameter if the header does not exist.
+func (r *Request) GetHeader(key string, def ...string) string {
+	value := r.Header.Get(key)
+	if value == "" && len(def) > 0 {
+		value = def[0]
+	}
+	return value
 }
 
 // GetHost returns current request host name, which might be a domain or an IP without port.
@@ -277,14 +282,4 @@ func (r *Request) ReloadParam() {
 	r.parsedForm = false
 	r.parsedQuery = false
 	r.bodyContent = nil
-}
-
-// GetHandlerResponse retrieves and returns the handler response object and its error.
-func (r *Request) GetHandlerResponse() interface{} {
-	return r.handlerResponse
-}
-
-// GetServeHandler retrieves and returns the user defined handler used to serve this request.
-func (r *Request) GetServeHandler() *HandlerItemParsed {
-	return r.serveHandler
 }
