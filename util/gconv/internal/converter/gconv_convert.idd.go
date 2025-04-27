@@ -15,7 +15,7 @@ func (c *Converter) iddConvertDiy(in doConvertInput, option ConvertOption) (any,
 		return iddToDatatypesJSON(in.FromValue), nil
 	// gorm.io/datatypes.JSONMap
 	case "datatypes.JSONMap", "*datatypes.JSONMap":
-		return c.Map(in.FromValue, option.MapOption), nil
+		return c.Map(in.FromValue, option.MapOption)
 	}
 	return nil, fmt.Errorf("unsupported cast type: %T To %s", in.FromValue, in.ToTypeName)
 }
