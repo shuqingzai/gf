@@ -153,25 +153,27 @@ func (oai *OpenApiV3) golangTypeToOAIType(t reflect.Type) string {
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
+
 	switch t.Kind() {
 	case reflect.String:
 		return TypeString
 
 	case reflect.Struct:
 		switch t.String() {
-		case `time.Time`, `gtime.Time`,
-			`carbon.Carbon`, `carbon.Date`, `carbon.DateMilli`, `carbon.DateMicro`, `carbon.DateNano`,
-			`carbon.DateTime`, `carbon.DateTimeMilli`, `carbon.DateTimeMicro`, `carbon.DateTimeNano`,
-			`carbon.Time`, `carbon.TimeMilli`, `carbon.TimeMicro`, `carbon.TimeNano`,
-			`carbon.Timestamp`, `carbon.TimestampMilli`, `carbon.TimestampMicro`, `carbon.TimestampNano`,
-			`timex.DateTimeRFC3339`, `timex.DateTimeMilliRFC3339`, `timex.DateTimeMicroRFC3339`, `timex.DateTimeNanoRFC3339`,
-			`timex.DateTimeISO8601`, `timex.DateTimeMilliISO8601`, `timex.DateTimeMicroISO8601`, `timex.DateTimeNanoISO8601`,
-			`timex.DateTimeISO8601Old`, `timex.DateTimeMilliISO8601Old`, `timex.DateTimeMicroISO8601Old`, `timex.DateTimeNanoISO8601Old`,
-			`decimal.Decimal`:
+		case `time.Time`, `gtime.Time`:
 			return TypeString
 		case `ghttp.UploadFile`:
 			return TypeFile
 		}
+
+		typeStr := t.String()
+		if strings.HasPrefix(typeStr, "carbon.") ||
+			strings.HasPrefix(typeStr, "timex.") ||
+			strings.HasPrefix(typeStr, "decimal.") ||
+			strings.HasSuffix(typeStr, "Decimal") {
+			return TypeString
+		}
+
 		return TypeObject
 
 	case reflect.Slice, reflect.Array:
