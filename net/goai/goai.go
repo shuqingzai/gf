@@ -280,6 +280,11 @@ func formatRefToBytes(ref string) []byte {
 }
 
 func formatRefAndDescToBytes(ref, desc string) []byte {
+	// If ref starts with components root node, no default prefix is added.
+	if strings.HasPrefix(ref, "#/components/") {
+		return []byte(fmt.Sprintf(`{"$ref":"%s","description":"%s"}`, ref, desc))
+	}
+
 	return []byte(fmt.Sprintf(`{"$ref":"#/components/schemas/%s","description":"%s"}`, ref, desc))
 }
 
