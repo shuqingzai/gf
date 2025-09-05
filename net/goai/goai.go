@@ -106,10 +106,10 @@ func New() *OpenApiV3 {
 
 // AddInput is the structured parameter for function OpenApiV3.Add.
 type AddInput struct {
-	Path   string      // Path specifies the custom path if this is not configured in Meta of struct tag.
-	Prefix string      // Prefix specifies the custom route path prefix, which will be added with the path tag in Meta of struct tag.
-	Method string      // Method specifies the custom HTTP method if this is not configured in Meta of struct tag.
-	Object interface{} // Object can be an instance of struct or a route function.
+	Path   string // Path specifies the custom path if this is not configured in Meta of struct tag.
+	Prefix string // Prefix specifies the custom route path prefix, which will be added with the path tag in Meta of struct tag.
+	Method string // Method specifies the custom HTTP method if this is not configured in Meta of struct tag.
+	Object any    // Object can be an instance of struct or a route function.
 }
 
 // Add adds an instance of struct or a route function to OpenApiV3 definition implements.
@@ -117,7 +117,7 @@ func (oai *OpenApiV3) Add(in AddInput) error {
 	var (
 		reflectValue = reflect.ValueOf(in.Object)
 	)
-	for reflectValue.Kind() == reflect.Ptr {
+	for reflectValue.Kind() == reflect.Pointer {
 		reflectValue = reflectValue.Elem()
 	}
 	switch reflectValue.Kind() {
@@ -150,7 +150,7 @@ func (oai OpenApiV3) String() string {
 }
 
 func (oai *OpenApiV3) golangTypeToOAIType(t reflect.Type) string {
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 
@@ -223,7 +223,7 @@ func (oai *OpenApiV3) golangTypeToSchemaName(t reflect.Type) string {
 		schemaName = gstr.TrimLeft(t.String(), "*")
 	)
 	// Pointer type has no PkgPath.
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	if pkgPath = t.PkgPath(); pkgPath != "" && pkgPath != "." {
