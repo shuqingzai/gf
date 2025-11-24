@@ -226,6 +226,7 @@ func (oai *OpenApiV3) golangTypeToSchemaName(t reflect.Type) string {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
+	schemaName = gstr.Replace(schemaName, `/`, `.`)
 	if pkgPath = t.PkgPath(); pkgPath != "" && pkgPath != "." {
 		// if !oai.Config.IgnorePkgPath {
 		// 	schemaName = gstr.Replace(pkgPath, `/`, `.`) + gstr.SubStrFrom(schemaName, ".")
@@ -257,6 +258,8 @@ func (oai *OpenApiV3) golangTypeToSchemaName(t reflect.Type) string {
 		` `: ``,
 		`{`: ``,
 		`}`: ``,
+		`[`: `.`,
+		`]`: `.`,
 	})
 	return schemaName
 }
