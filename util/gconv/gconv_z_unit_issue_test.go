@@ -805,3 +805,283 @@ func Test_Issue3903(t *testing.T) {
 		t.Assert(a.UserId, 100)
 	})
 }
+
+// https://github.com/gogf/gf/issues/4218
+func Test_Issue4218(t *testing.T) {
+	gtest.C(t, func(t *gtest.T) {
+		type SysMenuVo struct {
+			MenuId   int64        `json:"menuId"     orm:"menu_id"`
+			MenuName string       `json:"menuName"   orm:"menu_name"`
+			Children []*SysMenuVo `json:"children"   orm:"children"`
+			ParentId int64        `json:"parentId"   orm:"parent_id"`
+		}
+		menus := []*SysMenuVo{
+			{
+				MenuId:   1,
+				MenuName: "系统管理",
+				ParentId: 0,
+			},
+			{
+				MenuId:   2,
+				MenuName: "字典查询",
+				ParentId: 1,
+			},
+		}
+		var parent *SysMenuVo
+		err := gconv.Scan(menus[0], &parent)
+		t.AssertNil(err)
+		t.Assert(parent.MenuId, 1)
+		t.Assert(parent.ParentId, 0)
+
+		parent.Children = append(parent.Children, menus[1])
+
+		t.Assert(len(menus[0].Children), 1)
+		t.Assert(menus[0].Children[0].MenuId, 2)
+		t.Assert(menus[0].Children[0].ParentId, 1)
+	})
+}
+
+// https://github.com/gogf/gf/issues/4542
+func Test_Issue4542(t *testing.T) {
+	// Test case 1: Nested map conversion - map[string]any to map[string]map[string]float64
+	// This is the original bug report scenario
+	gtest.C(t, func(t *gtest.T) {
+		type ExchangeRate map[string]map[string]float64
+
+		// Source data from JSON unmarshalling (nested map[string]any)
+		source := map[string]any{
+			"USD": map[string]any{
+				"CNY": 7.0,
+				"EUR": 0.85,
+			},
+			"EUR": map[string]any{
+				"CNY": 8.2,
+				"USD": 1.18,
+			},
+		}
+
+		var exchangeRate ExchangeRate
+		err := gconv.Scan(source, &exchangeRate)
+		t.AssertNil(err)
+		t.Assert(len(exchangeRate), 2)
+		t.Assert(len(exchangeRate["USD"]), 2)
+		t.Assert(exchangeRate["USD"]["CNY"], 7.0)
+		t.Assert(exchangeRate["USD"]["EUR"], 0.85)
+		t.Assert(exchangeRate["EUR"]["CNY"], 8.2)
+		t.Assert(exchangeRate["EUR"]["USD"], 1.18)
+	})
+
+	// Test case 2: Deeply nested map conversion (3 levels)
+	// Verifies recursion terminates correctly at base types
+	gtest.C(t, func(t *gtest.T) {
+		type DeepMap map[string]map[string]map[string]int
+
+		source := map[string]any{
+			"level1": map[string]any{
+				"level2": map[string]any{
+					"level3": 100,
+				},
+			},
+		}
+
+		var deepMap DeepMap
+		err := gconv.Scan(source, &deepMap)
+		t.AssertNil(err)
+		t.Assert(deepMap["level1"]["level2"]["level3"], 100)
+	})
+
+	// Test case 3: Map with different key types
+	gtest.C(t, func(t *gtest.T) {
+		source := map[string]any{
+			"1": map[string]any{
+				"value": 100,
+			},
+			"2": map[string]any{
+				"value": 200,
+			},
+		}
+
+		var result map[int]map[string]int
+		err := gconv.Scan(source, &result)
+		t.AssertNil(err)
+		t.Assert(result[1]["value"], 100)
+		t.Assert(result[2]["value"], 200)
+	})
+
+	// Test case 4: Empty nested map - verifies recursion terminates on empty map
+	gtest.C(t, func(t *gtest.T) {
+		source := map[string]any{
+			"USD": map[string]any{},
+		}
+
+		var result map[string]map[string]float64
+		err := gconv.Scan(source, &result)
+		t.AssertNil(err)
+		t.Assert(len(result), 1)
+		t.Assert(len(result["USD"]), 0)
+	})
+
+	// Test case 5: Mixed struct and map in nested structure
+	// Verifies struct conversion still works (no regression)
+	gtest.C(t, func(t *gtest.T) {
+		type Config struct {
+			Name  string
+			Value int
+		}
+
+		source := map[string]any{
+			"config1": map[string]any{
+				"Name":  "test1",
+				"Value": 100,
+			},
+			"config2": map[string]any{
+				"Name":  "test2",
+				"Value": 200,
+			},
+		}
+
+		// Map value is struct - should still work
+		var result map[string]Config
+		err := gconv.Scan(source, &result)
+		t.AssertNil(err)
+		t.Assert(result["config1"].Name, "test1")
+		t.Assert(result["config1"].Value, 100)
+		t.Assert(result["config2"].Name, "test2")
+		t.Assert(result["config2"].Value, 200)
+	})
+
+	// Test case 6: Very deep nesting (5 levels) - stress test for recursion
+	gtest.C(t, func(t *gtest.T) {
+		source := map[string]any{
+			"l1": map[string]any{
+				"l2": map[string]any{
+					"l3": map[string]any{
+						"l4": map[string]any{
+							"l5": "deep_value",
+						},
+					},
+				},
+			},
+		}
+
+		var result map[string]map[string]map[string]map[string]map[string]string
+		err := gconv.Scan(source, &result)
+		t.AssertNil(err)
+		t.Assert(result["l1"]["l2"]["l3"]["l4"]["l5"], "deep_value")
+	})
+
+	// Test case 7: Source value is not a map (should be converted first)
+	// Verifies no infinite recursion when source doesn't match expected structure
+	gtest.C(t, func(t *gtest.T) {
+		source := map[string]any{
+			"key": "not_a_map",
+		}
+
+		var result map[string]map[string]string
+		err := gconv.Scan(source, &result)
+		// This should not cause infinite recursion, but conversion may fail or return empty
+		// The key point is it should not hang
+		t.AssertNil(err)
+	})
+}
+
+// issue4786ArrayValue models an array-backed value that unmarshals from text.
+type issue4786ArrayValue [16]byte
+
+// UnmarshalText stores text in the array-backed value.
+func (v *issue4786ArrayValue) UnmarshalText(text []byte) error {
+	copy(v[:], text)
+	return nil
+}
+
+// issue4786Request models the request shape reported in issue #4786.
+type issue4786Request struct {
+	// Values contains array-backed values parsed from request parameters.
+	Values []issue4786ArrayValue `json:"values"`
+}
+
+// Test_Issue4786 verifies textual slices bind to array-backed unmarshalling types.
+func Test_Issue4786(t *testing.T) {
+	gtest.C(t, func(t *gtest.T) {
+		var result issue4786Request
+		err := gconv.Struct(
+			g.Map{"values": []string{"first", "second"}},
+			&result,
+		)
+		t.AssertNil(err)
+		t.Assert(len(result.Values), 2)
+		t.Assert(string(result.Values[0][:5]), "first")
+		t.Assert(string(result.Values[1][:6]), "second")
+	})
+}
+
+// Test_Issue4786_SingleValue verifies single string value converts to slice with one array-backed element.
+func Test_Issue4786_SingleValue(t *testing.T) {
+	gtest.C(t, func(t *gtest.T) {
+		var result issue4786Request
+		err := gconv.Struct(
+			g.Map{"values": "single"},
+			&result,
+		)
+		t.AssertNil(err)
+		t.Assert(len(result.Values), 1)
+		t.Assert(string(result.Values[0][:6]), "single")
+	})
+}
+
+// Test_Issue4786_EmptySlice verifies empty slice source produces empty result.
+func Test_Issue4786_EmptySlice(t *testing.T) {
+	gtest.C(t, func(t *gtest.T) {
+		var result issue4786Request
+		err := gconv.Struct(
+			g.Map{"values": []string{}},
+			&result,
+		)
+		t.AssertNil(err)
+		t.Assert(len(result.Values), 0)
+	})
+}
+
+// Test_Issue4786_AnySlice verifies []any source type converts to array-backed slice.
+func Test_Issue4786_AnySlice(t *testing.T) {
+	gtest.C(t, func(t *gtest.T) {
+		var result issue4786Request
+		err := gconv.Struct(
+			g.Map{"values": []any{"hello", "world"}},
+			&result,
+		)
+		t.AssertNil(err)
+		t.Assert(len(result.Values), 2)
+		t.Assert(string(result.Values[0][:5]), "hello")
+		t.Assert(string(result.Values[1][:5]), "world")
+	})
+}
+
+// issue4786SmallArray is a smaller array type for testing different sizes.
+type issue4786SmallArray [4]byte
+
+// UnmarshalText stores text in the small array-backed value.
+func (v *issue4786SmallArray) UnmarshalText(text []byte) error {
+	copy(v[:], text)
+	return nil
+}
+
+// issue4786SmallRequest contains small array-backed values.
+type issue4786SmallRequest struct {
+	Values []issue4786SmallArray `json:"values"`
+}
+
+// Test_Issue4786_DifferentArraySize verifies conversion works with different array sizes.
+func Test_Issue4786_DifferentArraySize(t *testing.T) {
+	gtest.C(t, func(t *gtest.T) {
+		var result issue4786SmallRequest
+		err := gconv.Struct(
+			g.Map{"values": []string{"ab", "cd"}},
+			&result,
+		)
+		t.AssertNil(err)
+		t.Assert(len(result.Values), 2)
+		t.Assert(string(result.Values[0][:2]), "ab")
+		t.Assert(string(result.Values[1][:2]), "cd")
+	})
+}

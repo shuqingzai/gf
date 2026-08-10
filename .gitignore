@@ -20,8 +20,11 @@ go.work.sum
 .windsurfrules
 
 # Ignore for docs
+openspec/
+localdocs/
 node_modules
 .docusaurus
 output
 .example/
 .golangci.bck.yml
+*.exe

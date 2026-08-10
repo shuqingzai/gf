@@ -154,33 +154,33 @@ func (oai *OpenApiV3) golangTypeToOAIType(t reflect.Type) string {
 		t = t.Elem()
 	}
 
+	switch t.String() {
+	case `time.Time`, `gtime.Time`:
+		return TypeString
+	case `ghttp.UploadFile`:
+		return TypeFile
+	case `[]uint8`:
+		return TypeString
+	case `uuid.UUID`:
+		return TypeString
+	}
+
+	typeStr := t.String()
+	if strings.HasPrefix(typeStr, "carbon.") ||
+		strings.HasPrefix(typeStr, "timex.") ||
+		strings.HasPrefix(typeStr, "decimal.") ||
+		strings.HasSuffix(typeStr, "Decimal") {
+		return TypeString
+	}
+
 	switch t.Kind() {
 	case reflect.String:
 		return TypeString
 
 	case reflect.Struct:
-		switch t.String() {
-		case `time.Time`, `gtime.Time`:
-			return TypeString
-		case `ghttp.UploadFile`:
-			return TypeFile
-		}
-
-		typeStr := t.String()
-		if strings.HasPrefix(typeStr, "carbon.") ||
-			strings.HasPrefix(typeStr, "timex.") ||
-			strings.HasPrefix(typeStr, "decimal.") ||
-			strings.HasSuffix(typeStr, "Decimal") {
-			return TypeString
-		}
-
 		return TypeObject
 
 	case reflect.Slice, reflect.Array:
-		switch t.String() {
-		case `[]uint8`:
-			return TypeString
-		}
 		return TypeArray
 
 	case reflect.Bool:

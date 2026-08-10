@@ -166,6 +166,19 @@ func (c *Core) DoCommit(ctx context.Context, in DoCommitInput) (out DoCommitOutp
 		timestampMilli1      = gtime.TimestampMilli()
 	)
 
+	// Panic recovery to handle panics from underlying database drivers
+	defer func() {
+		if exception := recover(); exception != nil {
+			if err == nil {
+				if v, ok := exception.(error); ok && gerror.HasStack(v) {
+					err = v
+				} else {
+					err = gerror.WrapCodef(gcode.CodeDbOperationError, gerror.NewCodef(gcode.CodeInternalPanic, "%+v", exception), FormatSqlWithArgs(in.Sql, in.Args))
+				}
+			}
+		}
+	}()
+
 	// Trace span start.
 	tr := otel.GetTracerProvider().Tracer(traceInstrumentName, trace.WithInstrumentationVersion(gf.VERSION))
 	ctx, span := tr.Start(ctx, string(in.Type), trace.WithSpanKind(trace.SpanKindClient))
@@ -499,6 +512,22 @@ func (c *Core) RowsToResult(ctx context.Context, rows *sql.Rows) (Result, error)
 // OrderRandomFunction returns the SQL function for random ordering.
 func (c *Core) OrderRandomFunction() string {
 	return "RAND()"
+}
+
+// GetBoolLiteral returns the SQL literal for the given boolean value.
+// Default is "1"/"0" (MySQL bit/int convention); strict-bool drivers override.
+func (c *Core) GetBoolLiteral(v bool) string {
+	if v {
+		return "1"
+	}
+	return "0"
+}
+
+// GetLockSharedClause returns the SQL clause for Model.LockShared().
+// Default is MySQL's legacy "LOCK IN SHARE MODE"; drivers with other
+// dialect syntax (e.g. PostgreSQL's "FOR SHARE") override.
+func (c *Core) GetLockSharedClause() string {
+	return LockInShareMode
 }
 
 func (c *Core) columnValueToLocalValue(ctx context.Context, value any, columnType *sql.ColumnType) (any, error) {

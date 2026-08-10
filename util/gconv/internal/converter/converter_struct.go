@@ -30,6 +30,15 @@ type StructOption struct {
 	// ContinueOnError specifies whether to continue converting the next element
 	// if one element converting fails.
 	ContinueOnError bool
+
+	// OmitEmpty specifies whether to skip assignment when the source value is empty
+	// (empty string, zero value, etc.), preserving the existing value in the
+	// destination field.
+	OmitEmpty bool
+
+	// OmitNil specifies whether to skip assignment when the source value is nil,
+	// preserving the existing value in the destination field.
+	OmitNil bool
 }
 
 func (c *Converter) getStructOption(option ...StructOption) StructOption {
@@ -363,6 +372,13 @@ func (c *Converter) bindVarToStructField(
 			}
 		}
 	}()
+	// Check if the value should be omitted based on OmitEmpty or OmitNil options
+	if option.OmitNil && empty.IsNil(srcValue) {
+		return nil
+	}
+	if option.OmitEmpty && empty.IsEmpty(srcValue) {
+		return nil
+	}
 	// Directly converting.
 	if empty.IsNil(srcValue) {
 		fieldValue.Set(reflect.Zero(fieldValue.Type()))
@@ -483,9 +499,16 @@ func (c *Converter) bindVarToReflectValue(structFieldValue reflect.Value, value 
 	}
 
 	kind := structFieldValue.Kind()
-	// Converting using `Set` interface implements, for some types.
+	// Converting using common interfaces before falling through to reflection-based conversion.
 	switch kind {
-	case reflect.Slice, reflect.Array, reflect.Pointer, reflect.Interface:
+	case reflect.Array:
+		// Array values are addressable when they come from struct fields;
+		// use interface checks (IUnmarshalValue/IUnmarshalText/IUnmarshalJSON)
+		// instead of ISet which requires IsNil — not valid for arrays.
+		if ok, err = bindVarToReflectValueWithInterfaceCheck(structFieldValue, value); ok || err != nil {
+			return err
+		}
+	case reflect.Slice, reflect.Pointer, reflect.Interface:
 		if !structFieldValue.IsNil() {
 			if v, ok := structFieldValue.Interface().(localinterface.ISet); ok {
 				v.Set(value)

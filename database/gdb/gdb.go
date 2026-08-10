@@ -294,6 +294,9 @@ type DB interface {
 	// SetMaxConnLifeTime sets the maximum amount of time a connection may be reused.
 	SetMaxConnLifeTime(d time.Duration)
 
+	// SetMaxIdleConnTime sets the maximum amount of time a connection may be idle before being closed.
+	SetMaxIdleConnTime(d time.Duration)
+
 	// ===========================================================================
 	// Utility methods.
 	// ===========================================================================
@@ -342,6 +345,17 @@ type DB interface {
 	// OrderRandomFunction returns the SQL function for random ordering.
 	// The implementation is database-specific (e.g., RAND() for MySQL).
 	OrderRandomFunction() string
+
+	// GetBoolLiteral returns the SQL literal for the given boolean value.
+	// Drivers with strict boolean types (e.g. pgsql, gaussdb, clickhouse)
+	// return "true"/"false"; others return "1"/"0" for bit/int-based
+	// boolean columns.
+	GetBoolLiteral(v bool) string
+
+	// GetLockSharedClause returns the SQL clause emitted by Model.LockShared().
+	// Drivers that don't support MySQL's legacy "LOCK IN SHARE MODE" override
+	// to return their dialect equivalent (e.g. "FOR SHARE" on PostgreSQL).
+	GetLockSharedClause() string
 }
 
 // TX defines the interfaces for ORM transaction operations.
@@ -510,24 +524,25 @@ type StatsItem interface {
 
 // Core is the base struct for database management.
 type Core struct {
-	db            DB              // DB interface object.
-	ctx           context.Context // Context for chaining operation only. Do not set a default value in Core initialization.
-	group         string          // Configuration group name.
-	schema        string          // Custom schema for this object.
-	debug         *gtype.Bool     // Enable debug mode for the database, which can be changed in runtime.
-	cache         *gcache.Cache   // Cache manager, SQL result cache only.
-	links         *gmap.Map       // links caches all created links by node.
-	logger        glog.ILogger    // Logger for logging functionality.
-	config        *ConfigNode     // Current config node.
-	localTypeMap  *gmap.StrAnyMap // Local type map for database field type conversion.
-	dynamicConfig dynamicConfig   // Dynamic configurations, which can be changed in runtime.
-	innerMemCache *gcache.Cache   // Internal memory cache for storing temporary data.
+	db            DB                               // DB interface object.
+	ctx           context.Context                  // Context for chaining operation only. Do not set a default value in Core initialization.
+	group         string                           // Configuration group name.
+	schema        string                           // Custom schema for this object.
+	debug         *gtype.Bool                      // Enable debug mode for the database, which can be changed in runtime.
+	cache         *gcache.Cache                    // Cache manager, SQL result cache only.
+	links         *gmap.KVMap[ConfigNode, *sql.DB] // links caches all created links by node.
+	logger        glog.ILogger                     // Logger for logging functionality.
+	config        *ConfigNode                      // Current config node.
+	localTypeMap  *gmap.StrAnyMap                  // Local type map for database field type conversion.
+	dynamicConfig dynamicConfig                    // Dynamic configurations, which can be changed in runtime.
+	innerMemCache *gcache.Cache                    // Internal memory cache for storing temporary data.
 }
 
 type dynamicConfig struct {
 	MaxIdleConnCount int
 	MaxOpenConnCount int
 	MaxConnLifeTime  time.Duration
+	MaxIdleConnTime  time.Duration
 }
 
 // DoCommitInput is the input parameters for function DoCommit.
@@ -863,8 +878,10 @@ const (
 )
 
 var (
+	// checker is the checker function for instances map.
+	checker = func(v DB) bool { return v == nil }
 	// instances is the management map for instances.
-	instances = gmap.NewStrAnyMap(true)
+	instances = gmap.NewKVMapWithChecker[string, DB](checker, true)
 
 	// driverMap manages all custom registered driver.
 	driverMap = map[string]Driver{}
@@ -938,6 +955,9 @@ func NewByGroup(group ...string) (db DB, err error) {
 	)
 }
 
+// linksChecker is the checker function for links map.
+var linksChecker = func(v *sql.DB) bool { return v == nil }
+
 // newDBByConfigNode creates and returns an ORM object with given configuration node and group name.
 //
 // Very Note:
@@ -954,7 +974,7 @@ func newDBByConfigNode(node *ConfigNode, group string) (db DB, err error) {
 		group:         group,
 		debug:         gtype.NewBool(),
 		cache:         gcache.New(),
-		links:         gmap.New(true),
+		links:         gmap.NewKVMapWithChecker[ConfigNode, *sql.DB](linksChecker, true),
 		logger:        glog.New(),
 		config:        node,
 		localTypeMap:  gmap.NewStrAnyMap(true),
@@ -963,6 +983,7 @@ func newDBByConfigNode(node *ConfigNode, group string) (db DB, err error) {
 			MaxIdleConnCount: node.MaxIdleConnCount,
 			MaxOpenConnCount: node.MaxOpenConnCount,
 			MaxConnLifeTime:  node.MaxConnLifeTime,
+			MaxIdleConnTime:  node.MaxIdleConnTime,
 		},
 	}
 	if v, ok := driverMap[node.Type]; ok {
@@ -980,19 +1001,14 @@ func newDBByConfigNode(node *ConfigNode, group string) (db DB, err error) {
 // Instance returns an instance for DB operations.
 // The parameter `name` specifies the configuration group name,
 // which is DefaultGroupName in default.
-func Instance(name ...string) (db DB, err error) {
+func Instance(name ...string) (DB, error) {
 	group := configs.group
 	if len(name) > 0 && name[0] != "" {
 		group = name[0]
 	}
-	v := instances.GetOrSetFuncLock(group, func() any {
-		db, err = NewByGroup(group)
-		return db
+	return instances.GetOrSetFuncLockWithError(group, func() (DB, error) {
+		return NewByGroup(group)
 	})
-	if v != nil {
-		return v.(DB), nil
-	}
-	return
 }
 
 // getConfigNodeByGroup calculates and returns a configuration node of given group. It
@@ -1120,7 +1136,7 @@ func (c *Core) getSqlDb(master bool, schema ...string) (sqlDb *sql.DB, err error
 
 	// Cache the underlying connection pool object by node.
 	var (
-		instanceCacheFunc = func() any {
+		instanceCacheFunc = func() *sql.DB {
 			if sqlDb, err = c.db.Open(node); err != nil {
 				return nil
 			}
@@ -1142,6 +1158,9 @@ func (c *Core) getSqlDb(master bool, schema ...string) (sqlDb *sql.DB, err error
 			} else {
 				sqlDb.SetConnMaxLifetime(defaultMaxConnLifeTime)
 			}
+			if c.dynamicConfig.MaxIdleConnTime > 0 {
+				sqlDb.SetConnMaxIdleTime(c.dynamicConfig.MaxIdleConnTime)
+			}
 			return sqlDb
 		}
 		// it here uses NODE VALUE not pointer as the cache key, in case of oracle ORA-12516 error.
@@ -1149,7 +1168,7 @@ func (c *Core) getSqlDb(master bool, schema ...string) (sqlDb *sql.DB, err error
 	)
 	if instanceValue != nil && sqlDb == nil {
 		// It reads from instance map.
-		sqlDb = instanceValue.(*sql.DB)
+		sqlDb = instanceValue
 	}
 	if node.Debug {
 		c.db.SetDebug(node.Debug)
