@@ -133,7 +133,7 @@ func (oai *OpenApiV3) newSchemaRefWithGolangType(golangType reflect.Type, tagMap
 				}
 			}
 		} else {
-		    // Dereference pointers before resolving the array element type. Without this,
+			// Dereference pointers before resolving the array element type. Without this,
 			// a field such as `*[]Item` is documented as an array containing another array.
 			for golangType.Kind() == reflect.Pointer {
 				golangType = golangType.Elem()
