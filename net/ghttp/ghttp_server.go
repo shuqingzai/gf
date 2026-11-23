@@ -478,7 +478,7 @@ func Wait() {
 	<-allShutdownChan
 
 	// Remove plugins.
-	serverMapping.Iterator(func(k string, v *Server) bool {
+	for _, v := range serverMapping.Iterator {
 		if len(v.plugins) > 0 {
 			for _, p := range v.plugins {
 				intlog.Printf(ctx, `remove plugin: %s`, p.Name())
@@ -487,8 +487,7 @@ func Wait() {
 				}
 			}
 		}
-		return true
-	})
+	}
 	glog.Infof(ctx, "pid[%d]: all servers shutdown", gproc.Pid())
 }
 
